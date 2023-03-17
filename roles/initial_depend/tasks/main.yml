@@ -1,0 +1,36 @@
+---
+- name: install boto3
+  pip:
+    name: 
+     - boto
+     - boto3
+
+- name: create security group allow_traffic
+  amazon.aws.ec2_security_group:
+          name: allow_traffic from internal network
+          description: ansible course group 1
+          vpc_id: "{{ vpc_id }}"
+          aws_access_key: "{{ aws_access_key }}"
+          aws_secret_key: "{{ aws_secret_key }}"
+          region: "{{ region }}"
+          rules:
+                  -  cidr_ip: 172.31.0.0/16
+                     proto: all
+  register: sg
+
+- name: create security group allowweb
+  amazon.aws.ec2_security_group:
+          name: allow web traffic from outside
+          description: ansible course group 2
+          vpc_id: "{{ vpc_id }}"
+          aws_access_key: "{{ aws_access_key }}"
+          aws_secret_key: "{{ aws_secret_key }}"
+          region: "{{ region }}"
+          rules:
+                  -  cidr_ip: 0.0.0.0/0
+                     proto: tcp
+                     from_port: 80
+                     to_port: 80
+                  -  cidr_ip: 172.31.0.0/16
+                     proto: all
+  register: sg_allowweb

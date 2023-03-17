@@ -1,0 +1,29 @@
+---
+- name: install mysql
+  apt: name={{ item }} state=present
+  with_items:
+          - mysql-server
+          - mysql-client
+          - python3-dev
+          - default-libmysqlclient-dev
+
+            #- name: pip dependencies
+            #  pip:
+            #     name: 
+            #        - mysqlclient
+
+- name: configure missed my.cnf
+  ini_file: path=/etc/mysql/my.cnf section=mysqld option=bind-address value=0.0.0.0
+
+- name: Start and enable mysql
+  service: name=mysql state=restarted enabled=yes
+
+- name: create db
+  #mysql_db: name={{ db_name }} state=present login_unix_socket=/var/run/mysqld/mysqld.sock
+  mysql_db: name={{ db_name }} state=present
+
+- name: create db user  
+  mysql_user: name={{ db_user }} password={{ db_password }} priv='*.*:ALL' host='%' state='present'
+
+- name: restart db
+  service: name=mysql state=restarted enabled=yes

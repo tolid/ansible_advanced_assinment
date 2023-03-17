@@ -1,0 +1,16 @@
+---
+- name: install nginx
+  apt: name=nginx-light state=present update_cache=yes
+
+- name: copy config file
+  copy: src=nginx.conf dest=/etc/nginx/nginx.conf
+
+- name: set 1st server
+  lineinfile: path=/etc/nginx/nginx.conf regexp='_server_1' line='server {{ hostvars[groups["web"][0]]["ansible_default_ipv4"]["address"] }};'
+
+- name: set 2nd server
+  lineinfile: path=/etc/nginx/nginx.conf regexp='_server_2' line='server {{ hostvars[groups["web"][1]]["ansible_default_ipv4"]["address"] }};'
+
+- name: restart nginx
+  service: name=nginx state=restarted enabled=true
+

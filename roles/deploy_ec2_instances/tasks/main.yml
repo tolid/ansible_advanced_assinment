@@ -1,0 +1,41 @@
+---
+- name: start instance "{{ ec2_name }}"
+  amazon.aws.ec2_instance:
+          name: "{{ ec2_name }}"
+          key_name: "{{ key_name }}"
+          vpc_subnet_id: "{{ vpc_subnet_id }}"
+          instance_type: "{{ instance_type }}"
+          image_id: "{{ image_id }}"
+          security_group: "{{ security_group.group_id }}"
+          state: running
+          region: "{{ region }}"
+          aws_access_key: "{{ aws_access_key }}"
+          aws_secret_key: "{{ aws_secret_key }}"
+          network:
+              assign_public_ip: true
+  register: new_ec2
+
+- name: Add new instances to host group "{{ launched_group  }}"
+  add_host:
+          hostname: "{{ item.private_ip_address }}"
+          groupname: "{{ launched_group  }}"
+  loop: "{{ new_ec2.instances  }}"
+
+  #- name: Collect public IP
+  #  set_fact: 
+  #        loadb_public_ip: "{{ item.public_ip_address }}"
+  #        #when: "{{ ec2_name }}" == "load-balancer"
+  #  loop: "{{ new_ec2.instances  }}"
+  #
+  #  #add_host:
+  #  #        hostname: "{{ item.tags.Name }}"
+  #  #        ansible_host: "{{ item.public_ip_address }}"
+  #  #loop: "{{ new_ec2.instances  }}"
+
+
+- name: Wait for SSH on "{{ ec2_name }}"
+  delegate_to: "{{ item.private_ip_address }}"
+  wait_for_connection:
+          delay: 2
+          timeout: 80
+  loop: "{{ new_ec2.instances }}"

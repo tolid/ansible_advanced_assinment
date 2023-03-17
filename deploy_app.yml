@@ -1,0 +1,78 @@
+---
+- name: Enable EC2 instances
+  hosts: localhost
+  remote_user: ubuntu # Using Remote user as ubuntu
+  vars_files:
+       - myvars.yml
+  roles:
+       - initial_depend
+       - role: deploy_ec2_instances
+         ec2_name: web-1
+         security_group: "{{ sg }}"
+         launched_group: web
+       - role: deploy_ec2_instances
+         ec2_name: web-2
+         security_group: "{{ sg }}"
+         launched_group: web
+       - role: deploy_ec2_instances
+         ec2_name: db-1
+         security_group: "{{ sg }}"
+         launched_group: db
+       - role: deploy_ec2_instances
+         ec2_name: load-balancer
+         security_group: "{{ sg_allowweb }}"
+         launched_group: load_b
+
+
+- name: Setup Database server
+  hosts: db
+  become: true
+  vars_files:
+       - myvars.yml
+  roles: 
+     - python
+     - setup_db
+
+- name: Setup Web servers
+  hosts: web
+  become: true
+  vars_files:
+       - myvars.yml
+  roles:
+     - python
+     - setup_web
+
+- name: Setup load balancer
+  hosts: load_b
+  become: true
+  roles:
+      - python
+      - nginx
+
+- name: Find load balancer public IP
+  hosts: load_b
+  vars_files:
+       - myvars.yml
+  tasks:
+      - name: Get EC2 info
+        ec2_instance_info:
+          region: "{{ region }}"
+          aws_access_key: "{{ aws_access_key }}"
+          aws_secret_key: "{{ aws_secret_key }}"
+          filters: 
+               "tag:Name": load-balancer
+        register: lb_ec2
+
+      - name: Print debug msg
+        debug: msg='Hi baby! Web app is available at http://{{ lb_ec2.instances[0].public_ip_address  }}'
+
+      - name: Send email
+        mail:
+           host: mycompany.com
+           username: xyz@mycompany.com
+           password: "{{ mail_password }}"
+           subject: Done
+           body: 'Web app is available at http://{{ lb_ec2.instances[0].public_ip_address  }} '
+        ignore_errors: yes
+
+

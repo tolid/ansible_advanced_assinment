@@ -1,0 +1,4 @@
+Deploys 2 web servers; database server and nginx based load balancer to AWS
+
+export ANSIBLE_VAULT_PASSWORD_FILE=~/.vault_pass
+ansible-playbook -i inventory.txt deploy_app.yml
